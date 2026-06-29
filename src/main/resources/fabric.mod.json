@@ -5,7 +5,9 @@
   "name": "Bedrock Bridging",
   "description": "port bedrock bridging behaviour completely to java",
   "authors": ["CCPCT"],
-  "contact": {},
+  "contact": {
+
+  },
   "license": "GPL-3.0",
   "icon": "icon.png",
   "environment": "client",

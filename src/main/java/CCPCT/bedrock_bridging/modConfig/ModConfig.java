@@ -1,5 +1,6 @@
 package CCPCT.bedrock_bridging.modConfig;
 
+import CCPCT.bedrock_bridging.Bedrock_bridging;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -11,21 +12,10 @@ import java.nio.file.Path;
 public class ModConfig {
 
     public boolean modEnabled = true;
+    public float reach = -1f;
+    public int placementInterval = 4;
+
     public boolean debug = false;
-    public boolean autoFocusSearch = false;
-    public int autoUpdateRecipeTimer = 20;
-    public boolean allowRecipeBook = false;
-    public boolean showGuiRight = true;
-    public boolean allowGeneratedRecipes = true;
-    public int maxEnchantsAllowedForRepair = 0;
-    public boolean categorizeRecipes = true;
-    public int fadeOutTime = 10;
-    public boolean showAllRecipes = true;
-    public boolean refillFuel = true;
-    public boolean recipeBackground = false;
-    public int itemDisplaySpacing = 1;
-    public boolean enableTrading = true;
-    public int itemsPerRow = 9;
 
     public static ModConfig get() {
         if (INSTANCE==null)
@@ -39,7 +29,7 @@ public class ModConfig {
 
 
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
-            .getConfigDir().resolve("easier-crafting.json");
+            .getConfigDir().resolve(Bedrock_bridging.MOD_ID+".json");
 
     public static void load() {
         try {
@@ -58,7 +48,7 @@ public class ModConfig {
         try {
             Files.writeString(CONFIG_PATH, GSON.toJson(get()));
         } catch (IOException e) {
-            System.err.println("Unable to save EasierCrafting config!");
+            System.err.println("Unable to save Bedrock Bridging config!");
         }
     }
 }
