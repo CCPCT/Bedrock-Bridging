@@ -6,7 +6,9 @@
   "description": "port bedrock bridging behaviour completely to java",
   "authors": ["CCPCT"],
   "contact": {
-
+    "homepage": "https://modrinth.com/mod/bedrock-bridging",
+    "sources": "https://github.com/CCPCT/Bedrock-Bridging",
+    "issues": "https://github.com/CCPCT/Bedrock-Bridging/issues"
   },
   "license": "GPL-3.0",
   "icon": "icon.png",
