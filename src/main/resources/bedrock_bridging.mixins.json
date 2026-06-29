@@ -6,8 +6,7 @@
   "client": [
     "LocalPlayerMixin",
     "MinecraftMixin",
-    "MultiPlayerGameModeMixin",
-    "ProjectileUtilMixin"
+    "MultiPlayerGameModeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

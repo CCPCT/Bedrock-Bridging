@@ -16,6 +16,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -84,8 +85,23 @@ public class MinecraftMixin {
 
             if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
 
+            var clip = box.clip(start, end);
+            if (clip.isPresent()) {
 
-            if (box.clip(start, end).isPresent()) {
+                BlockHitResult worldClip = player.level().clip(new ClipContext(
+                        start,
+                        end,
+                        ClipContext.Block.OUTLINE,
+                        ClipContext.Fluid.NONE,
+                        player
+                ));
+
+                if (clip.get().closerThan(player.getEyePosition(), worldClip.getLocation().distanceTo(player.getEyePosition()))) {
+
+                } else {
+                    ci.cancel();
+                    return;
+                }
 
                 BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Direction.getNearest(magicDirection, null), target, false);
 
