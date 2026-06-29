@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "bedrock_bridging",
+  "version": "${version}",
+  "name": "Bedrock Bridging",
+  "description": "port bedrock bridging behaviour completely to java",
+  "authors": ["CCPCT"],
+  "contact": {},
+  "license": "GPL-3.0",
+  "icon": "icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["CCPCT.bedrock_bridging.Bedrock_bridging"],
+    "modmenu": ["CCPCT.bedrock_bridging.modConfig.ModMenuHandler"]
+  },
+  "mixins": [
+    "bedrock_bridging.mixins.json"
+  ],
+  "depends": {
+    "fabric-api": "*",
+    "fabricloader": "*",
+    "minecraft": "${minecraft_range}",
+    "java": ">=25",
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}
