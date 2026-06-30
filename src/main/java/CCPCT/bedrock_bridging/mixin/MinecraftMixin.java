@@ -59,7 +59,7 @@ public class MinecraftMixin {
 
     @Unique
     private static Vec3 getHitVecFromPositions(BlockPos lastPlacePos, BlockPos target) {
-        return lastPlacePos.getCenter().lerp(target.getCenter(), 0.5);
+        return lastPlacePos.getCenter().lerp(target.getCenter(), 0.5).with(Direction.Axis.Y, magicY);
     }
 
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
