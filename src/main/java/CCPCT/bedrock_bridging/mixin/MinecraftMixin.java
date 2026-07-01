@@ -32,6 +32,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static CCPCT.bedrock_bridging.Bedrock_bridging.*;
 
@@ -67,7 +68,7 @@ public class MinecraftMixin {
         if (!ModConfig.get().modEnabled || player==null) return;
         Minecraft client = Minecraft.getInstance();
         if (ModConfig.get().debug) {
-            player.sendSystemMessage(Component.literal("called start use item"+client.getFrameTimeNs()));
+//            player.sendSystemMessage(Component.literal("called start use item"+client.getFrameTimeNs()));
 //            player.sendOverlayMessage(Component.literal("prep "+prepareMagic+" dire "+(magicDirection!=null)));
         }
 
@@ -83,9 +84,9 @@ public class MinecraftMixin {
             Vec3 lookDirection = player.getHeadLookAngle();
             Vec3 end = start.add(lookDirection.scale(ModConfig.get().reach==-1f ? 4.5 : ModConfig.get().reach));
 
-            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
+            // if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
 
-            var clip = box.clip(start, end);
+            Optional<Vec3> clip = box.clip(start, end);
             if (clip.isPresent()) {
 
                 BlockHitResult worldClip = player.level().clip(new ClipContext(
@@ -96,9 +97,10 @@ public class MinecraftMixin {
                         player
                 ));
 
-                if (clip.get().closerThan(player.getEyePosition(), worldClip.getLocation().distanceTo(player.getEyePosition()))) {
+                if (worldClip.getType()== HitResult.Type.MISS || clip.get().closerThan(player.getEyePosition(), worldClip.getLocation().distanceTo(player.getEyePosition()))) {
 
                 } else {
+                    // blocked
                     ci.cancel();
                     return;
                 }
@@ -116,7 +118,7 @@ public class MinecraftMixin {
 
         Vec3 newVec = player.position().add(lastPlacePosRelative);
         BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
-        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("new block "+ newBlock.toShortString()));
+//        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("new block "+ newBlock.toShortString()));
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
             //gut
@@ -126,23 +128,25 @@ public class MinecraftMixin {
             if (placeBlock(ci, (BlockHitResult) hitResult)) {
                 ci.cancel();
             }
-            return;
-        } else if (hitResult instanceof BlockHitResult result) {
-            newBlock = result.getBlockPos();
+        } else if (hitResult instanceof BlockHitResult bhr) {
+            newBlock = bhr.getBlockPos().relative(bhr.getDirection());
             if (lastPlacePos.distManhattan(newBlock) == 1) {
-                // gut but nit so gut
                 if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("nicht so gut"));
+                magicDirection = newBlock.subtract(lastPlacePos);
             } else {
                 if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("schlecht"));
-                return;
             }
+            lastPlacePos = newBlock;
+        } else {
+            prepareMagic = false;
         }
-
-        magicDirection = newBlock.subtract(lastPlacePos);
     }
 
     @Unique
     private boolean placeBlock(CallbackInfo ci, BlockHitResult blockHit) {
+        assert gameMode != null;
+        assert player != null;
+
         // return success?
         BlockPos target = blockHit.getBlockPos();
 
@@ -176,6 +180,8 @@ public class MinecraftMixin {
     private void endUseItem(CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
 
+        if (client.gameMode == null) return;
+
         if (!ModConfig.get().modEnabled || client.gameMode.isDestroying()) return;
 
         System.out.println("do end");
@@ -183,13 +189,13 @@ public class MinecraftMixin {
         rightClickDelay = ModConfig.get().placementInterval;
 
 
-        if (client.player == null || hitResult == null || !(hitResult instanceof BlockHitResult bResult)) {
+        if (client.player == null || hitResult == null || !(hitResult instanceof BlockHitResult bhr)) {
             return;
         }
         if (magicDirection != null) {
             return;
         }
-        lastPlacePos = bResult.getBlockPos().relative(bResult.getDirection());
+        lastPlacePos = bhr.getBlockPos().relative(bhr.getDirection());
         lastPlacePosRelative = lastPlacePos.getCenter().subtract(client.player.position());
         prepareMagic = true;
         magicY = hitResult.getLocation().y;
