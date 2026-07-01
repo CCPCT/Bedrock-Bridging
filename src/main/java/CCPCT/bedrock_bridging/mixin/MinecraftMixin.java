@@ -60,7 +60,7 @@ public class MinecraftMixin {
 
     @Unique
     private static Vec3 getHitVecFromPositions(BlockPos lastPlacePos, BlockPos target) {
-        return lastPlacePos.getCenter().lerp(target.getCenter(), 0.5).with(Direction.Axis.Y, magicY);
+        return new Vec3(lastPlacePos).lerp(new Vec3(target), 0.5).add(.5,0,.5).with(Direction.Axis.Y, magicY);
     }
 
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
@@ -196,7 +196,7 @@ public class MinecraftMixin {
             return;
         }
         lastPlacePos = bhr.getBlockPos().relative(bhr.getDirection());
-        lastPlacePosRelative = lastPlacePos.getCenter().subtract(client.player.position());
+        lastPlacePosRelative = new Vec3(lastPlacePos).add(.5,.5,.5).subtract(client.player.position());
         prepareMagic = true;
         magicY = hitResult.getLocation().y;
     }
