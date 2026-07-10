@@ -2,34 +2,35 @@ package CCPCT.bedrock_bridging.mixin;
 
 import CCPCT.bedrock_bridging.Bedrock_bridging;
 import CCPCT.bedrock_bridging.modConfig.ModConfig;
+import CCPCT.bedrock_bridging.util.Chat;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.AttackRange;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LocalPlayer.class)
-public class LocalPlayerMixin {
+public abstract class LocalPlayerMixin {
     @Shadow
     private static HitResult pick(Entity cameraEntity, double blockInteractionRange, double entityInteractionRange, float partialTicks) {
         throw new AssertionError();
@@ -39,6 +40,43 @@ public class LocalPlayerMixin {
     private static HitResult filterHitResult(HitResult hitResult, Vec3 from, double maxRange) {
         throw new AssertionError();
     }
+
+    @Shadow
+    protected abstract void sendIsSprintingIfNeeded();
+
+    @Shadow
+    protected abstract boolean isControlledCamera();
+
+    @Shadow
+    private double xLast;
+
+    @Shadow
+    private double yLast;
+
+    @Shadow
+    private double zLast;
+
+    @Shadow
+    private float yRotLast;
+
+    @Shadow
+    private float xRotLast;
+
+    @Shadow
+    private int positionReminder;
+
+    @Shadow
+    @Final
+    public ClientPacketListener connection;
+
+    @Shadow
+    private boolean lastOnGround;
+
+    @Shadow
+    private boolean lastHorizontalCollision;
+
+    @Shadow
+    private boolean autoJumpEnabled;
 
     @Unique
     private static BlockHitResult traceStraightDown(LocalPlayer player, float partialTicks) {
@@ -109,6 +147,7 @@ public class LocalPlayerMixin {
         }
 
         if (Bedrock_bridging.magicDirection != null) {
+            // if auto placement is on, update hit result there
             cir.setReturnValue(Minecraft.getInstance().hitResult);
         }
 
@@ -166,6 +205,65 @@ public class LocalPlayerMixin {
             return ModConfig.get().reach;
         }
         return maxRange;
+    }
+
+    @Inject(method = "sendPosition", at = @At("HEAD"), cancellable = true)
+    private void sendPosition(CallbackInfo ci) {
+        if (!Bedrock_bridging.disablePosPacket && !Bedrock_bridging.recoverPosPacket) {
+            return;
+        }
+
+        ci.cancel();
+
+        LocalPlayer player = Minecraft.getInstance().player;
+        assert player != null;
+
+        if (ModConfig.get().debug) {
+            Chat.system("trying to reverse place: x:" + player.getXRot() + " | y:" + player.getYRot());
+            Chat.system("sent: x:" + player.getXRot() * -1 + " | y:" + player.getYRot() + 180);
+
+        }
+
+        sendIsSprintingIfNeeded();
+        if (isControlledCamera()) {
+            double deltaX = player.getX() - xLast;
+            double deltaY = player.getY() - yLast;
+            double deltaZ = player.getZ() - zLast;
+            ++positionReminder;
+
+            float xRot = player.getXRot();
+            float yRot = player.getYRot();
+
+            if (!Bedrock_bridging.recoverPosPacket) {
+                xRot *= -1;
+                yRot += 180;
+            }
+
+            boolean move = Mth.lengthSquared(deltaX, deltaY, deltaZ) > Mth.square(2.0E-4) || this.positionReminder >= 20;
+            if (move) {
+                connection.send(new ServerboundMovePlayerPacket.PosRot(player.position(), yRot, xRot, player.onGround(), player.horizontalCollision));
+            } else {
+                connection.send(new ServerboundMovePlayerPacket.Rot(yRot, xRot, player.onGround(), player.horizontalCollision));
+            }
+
+            if (move) {
+                xLast = player.getX();
+                yLast = player.getY();
+                zLast = player.getZ();
+                positionReminder = 0;
+            }
+
+            yRotLast = player.getYRot();
+            xRotLast = player.getXRot();
+
+
+            lastOnGround = player.onGround();
+            lastHorizontalCollision = player.horizontalCollision;
+            autoJumpEnabled = Minecraft.getInstance().options.autoJump().get();
+
+        }
+        Bedrock_bridging.recoverPosPacket = !Bedrock_bridging.recoverPosPacket;
+
     }
 
 }

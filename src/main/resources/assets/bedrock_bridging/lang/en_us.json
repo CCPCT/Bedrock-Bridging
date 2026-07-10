@@ -1,3 +1,5 @@
 {
-  "key.bedrock_bridge.enableMod": "Toggle Placement Mode"
+  "key.category.bedrock_bridging.key": "Bedrock Bridging",
+  "key.bedrock_bridging.enableMod": "Toggle Placement Mode",
+  "key.bedrock_bridging.reverse": "Reverse Placement"
 }
