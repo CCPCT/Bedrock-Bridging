@@ -60,7 +60,12 @@ public class MinecraftMixin {
 
     @Unique
     private static Vec3 getHitVecFromPositions(BlockPos lastPlacePos, BlockPos target) {
-        return lastPlacePos.getCenter().lerp(target.getCenter(), 0.5).with(Direction.Axis.Y, magicY);
+        Vec3 centre = lastPlacePos.getCenter().lerp(target.getCenter(), 0.5);
+        if (lastPlacePos.getY() == target.getY()) {
+            return centre.with(Direction.Axis.Y, magicY);
+        } else {
+            return centre;
+        }
     }
 
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
@@ -76,7 +81,7 @@ public class MinecraftMixin {
         if (!prepareMagic || (hitResult!=null && hitResult.getType() == HitResult.Type.ENTITY)) return;
 
         if (magicDirection != null) {
-            System.out.println("do 2");
+            if (ModConfig.get().debug) System.out.println("do 2");
             BlockPos target = lastPlacePos.offset(magicDirection);
             AABB box = new AABB(target.getX(),target.getY(),target.getZ(),target.getX()+1,target.getY()+1,target.getZ()+1);
             float partialTick = client.getDeltaTracker().getGameTimeDeltaTicks();
@@ -114,7 +119,7 @@ public class MinecraftMixin {
             return;
         }
 
-        System.out.println("do 1");
+        if (ModConfig.get().debug) System.out.println("do 1");
 
         Vec3 newVec = player.position().add(lastPlacePosRelative);
         BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
@@ -122,6 +127,10 @@ public class MinecraftMixin {
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
             //gut
+            if (!Minecraft.getInstance().level.getBlockState(newBlock).canBeReplaced()) {
+                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("blocked"));
+                return;
+            }
             if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("gut"));
             magicDirection = newBlock.subtract(lastPlacePos);
             hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), newBlock, false);
