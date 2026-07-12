@@ -1,9 +1,7 @@
 package CCPCT.bedrock_bridging.mixin;
 
 
-import CCPCT.bedrock_bridging.Bedrock_bridging;
 import CCPCT.bedrock_bridging.modConfig.ModConfig;
-import com.terraformersmc.modmenu.util.mod.Mod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
@@ -12,12 +10,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -31,7 +29,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import static CCPCT.bedrock_bridging.Bedrock_bridging.*;
@@ -75,6 +72,12 @@ public class MinecraftMixin {
         if (ModConfig.get().debug) {
 //            player.sendSystemMessage(Component.literal("called start use item"+client.getFrameTimeNs()));
 //            player.sendOverlayMessage(Component.literal("prep "+prepareMagic+" dire "+(magicDirection!=null)));
+        }
+
+        ItemStack handHeld = player.getMainHandItem();
+
+        if (handHeld.getMaxDamage() > 0 || handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) && ModConfig.get().disableToolCooldown) {
+            return;
         }
 
 
@@ -121,8 +124,11 @@ public class MinecraftMixin {
 
         if (ModConfig.get().debug) System.out.println("do 1");
 
-        Vec3 newVec = player.position().add(lastPlacePosRelative);
-        BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
+        Vec3 newVec = player.position().subtract(lastPlayerPos);
+
+        BlockPos newBlock = lastPlacePos.offset(Math.clamp(Math.round(newVec.x), -1, 1),Math.clamp(Math.round(newVec.y), -1, 1),Math.clamp(Math.round(newVec.z), -1, 1));
+
+//        BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
 //        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("new block "+ newBlock.toShortString()));
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
@@ -193,7 +199,16 @@ public class MinecraftMixin {
 
         if (!ModConfig.get().modEnabled || client.gameMode.isDestroying()) return;
 
-        System.out.println("do end");
+        ItemStack handHeld = player.getMainHandItem();
+
+        if ((handHeld.getMaxDamage() > 0 || handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS)) && ModConfig.get().disableToolCooldown) {
+            rightClickDelay = 1;
+            return;
+        }
+
+
+
+        if (ModConfig.get().debug) System.out.println("do end");
 
         rightClickDelay = ModConfig.get().placementInterval;
 
@@ -205,7 +220,7 @@ public class MinecraftMixin {
             return;
         }
         lastPlacePos = bhr.getBlockPos().relative(bhr.getDirection());
-        lastPlacePosRelative = lastPlacePos.getCenter().subtract(client.player.position());
+        lastPlayerPos = client.player.position();
         prepareMagic = true;
         magicY = hitResult.getLocation().y;
     }

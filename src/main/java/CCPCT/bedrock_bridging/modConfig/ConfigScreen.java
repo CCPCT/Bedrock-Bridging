@@ -43,6 +43,12 @@ public class ConfigScreen extends Screen {
                 .setSaveConsumer(newValue -> ModConfig.get().placementInterval = newValue)
                 .build());
 
+        generalTab.addEntry(entryBuilder.startBooleanToggle(Component.literal("Disable Tool Cooldown"), ModConfig.get().disableToolCooldown)
+                .setTooltip(Component.literal("e.g. axe stripping/ hoeing farm/ placing crops"))
+                .setDefaultValue(false)
+                .setSaveConsumer(newValue -> ModConfig.get().disableToolCooldown = newValue)
+                .build());
+
         generalTab.addEntry(entryBuilder.startBooleanToggle(Component.literal("Debug"), ModConfig.get().debug)
                 .setTooltip(Component.literal("ru a dev?"))
                 .setDefaultValue(false)

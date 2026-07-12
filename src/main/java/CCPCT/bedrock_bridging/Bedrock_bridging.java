@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -24,7 +23,7 @@ public class Bedrock_bridging implements ClientModInitializer {
     public static boolean prepareMagic = false;
     public static double magicY = 0;
     public static BlockPos lastPlacePos;
-    public static Vec3 lastPlacePosRelative;
+    public static Vec3 lastPlayerPos;
 
 
     @Override
@@ -54,7 +53,7 @@ public class Bedrock_bridging implements ClientModInitializer {
 
             } else {
                 lastPlacePos = null;
-                lastPlacePosRelative = null;
+                lastPlayerPos = null;
                 prepareMagic = false;
                 magicDirection = null;
             }
