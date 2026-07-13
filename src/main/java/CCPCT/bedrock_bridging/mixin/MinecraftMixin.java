@@ -14,8 +14,12 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -76,7 +80,7 @@ public class MinecraftMixin {
 
         ItemStack handHeld = player.getMainHandItem();
 
-        if (handHeld.getMaxDamage() > 0 || handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) && ModConfig.get().disableToolCooldown) {
+        if (shouldRemoveCooldown(handHeld) && ModConfig.get().disableToolCooldown) {
             return;
         }
 
@@ -201,7 +205,7 @@ public class MinecraftMixin {
 
         ItemStack handHeld = player.getMainHandItem();
 
-        if ((handHeld.getMaxDamage() > 0 || handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS)) && ModConfig.get().disableToolCooldown) {
+        if (shouldRemoveCooldown(handHeld) && ModConfig.get().disableToolCooldown) {
             rightClickDelay = 1;
             return;
         }
@@ -223,6 +227,14 @@ public class MinecraftMixin {
         lastPlayerPos = client.player.position();
         prepareMagic = true;
         magicY = hitResult.getLocation().y;
+    }
+
+    @Unique boolean shouldRemoveCooldown(ItemStack handHeld) {
+        assert Minecraft.getInstance().level != null;
+        if (!(hitResult instanceof BlockHitResult bhr)) return false;
+        Block block = Minecraft.getInstance().level.getBlockState(bhr.getBlockPos()).getBlock();
+        Item item = block.asItem();
+        return ((handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || handHeld.getMaxDamage() > 0) && (item.getDefaultInstance().is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || block instanceof StemBlock ||item == Items.DIRT||item == Items.GRASS_BLOCK||item==Items.FARMLAND||item.getDefaultInstance().is(ItemTags.LOGS)));
     }
 
 }
