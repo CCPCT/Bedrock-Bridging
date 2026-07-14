@@ -109,6 +109,7 @@ public class LocalPlayerMixin {
         }
 
         if (Bedrock_bridging.magicDirection != null) {
+            // if auto placement is on, update hit result there
             cir.setReturnValue(Minecraft.getInstance().hitResult);
         }
 

@@ -77,6 +77,9 @@ public class MinecraftMixin {
 //            player.sendSystemMessage(Component.literal("called start use item"+client.getFrameTimeNs()));
 //            player.sendOverlayMessage(Component.literal("prep "+prepareMagic+" dire "+(magicDirection!=null)));
         }
+        if (lastPlacePos != null) {
+            player.sendOverlayMessage(Component.literal("lpp: "+lastPlacePos.toShortString()));
+        }
 
         ItemStack handHeld = player.getMainHandItem();
 
@@ -85,7 +88,7 @@ public class MinecraftMixin {
         }
 
 
-        if (!prepareMagic || (hitResult!=null && hitResult.getType() == HitResult.Type.ENTITY)) return;
+        if (!prepareMagic) return;
 
         if (magicDirection != null) {
             if (ModConfig.get().debug) System.out.println("do 2");
@@ -119,10 +122,16 @@ public class MinecraftMixin {
 
                 BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Direction.getNearest(magicDirection, null), target, false);
 
-                if (!placeBlock(ci, blockHit)) return;
+                if (placeBlock(ci, blockHit)) {
+                    lastPlacePos = target;
+                }
 
             }
             ci.cancel();
+            return;
+        }
+
+        if (hitResult == null || hitResult.getType() != HitResult.Type.BLOCK) {
             return;
         }
 
@@ -130,6 +139,7 @@ public class MinecraftMixin {
 
         Vec3 newVec = player.position().subtract(lastPlayerPos);
 
+        // clamp new vec to get only relative direction
         BlockPos newBlock = lastPlacePos.offset(Math.clamp(Math.round(newVec.x), -1, 1),Math.clamp(Math.round(newVec.y), -1, 1),Math.clamp(Math.round(newVec.z), -1, 1));
 
 //        BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
@@ -137,21 +147,31 @@ public class MinecraftMixin {
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
             //gut
-            if (!Minecraft.getInstance().level.getBlockState(newBlock).canBeReplaced()) {
-                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("blocked"));
-                return;
-            }
-            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("gut"));
+//            if (!Minecraft.getInstance().level.getBlockState(newBlock).canBeReplaced()) {
+//                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("blocked"));
+//                return;
+//            }
             magicDirection = newBlock.subtract(lastPlacePos);
+            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("gut, "+magicDirection.toShortString()));
             hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), newBlock, false);
             if (placeBlock(ci, (BlockHitResult) hitResult)) {
+                lastPlacePos = newBlock;
                 ci.cancel();
+            } else { // double prevention? with canBeReplaced
+//                magicDirection = null;
+                return;
             }
+
         } else if (hitResult instanceof BlockHitResult bhr) {
             newBlock = bhr.getBlockPos().relative(bhr.getDirection());
             if (lastPlacePos.distManhattan(newBlock) == 1) {
-                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("nicht so gut"));
-                magicDirection = newBlock.subtract(lastPlacePos);
+                if (placeBlock(ci, bhr)) {
+                    magicDirection = newBlock.subtract(lastPlacePos);
+                    lastPlacePos = newBlock;
+                    if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("nicht so gut, "+magicDirection.toShortString()));
+                }
+                ci.cancel();
+                return;
             } else {
                 if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("schlecht"));
             }
@@ -162,15 +182,15 @@ public class MinecraftMixin {
     }
 
     @Unique
-    private boolean placeBlock(CallbackInfo ci, BlockHitResult blockHit) {
+    private boolean placeBlock(CallbackInfo ci, BlockHitResult bhr) {
         assert gameMode != null;
         assert player != null;
 
         // return success?
-        BlockPos target = blockHit.getBlockPos();
+//        BlockPos target = bhr.getBlockPos();
 
         ItemStack heldItem = player.getMainHandItem();
-        if (!(heldItem.getItem() instanceof BlockItem)) {
+        if (bhr==null || !(heldItem.getItem() instanceof BlockItem)) {
             ci.cancel();
             return false;
         }
@@ -179,7 +199,7 @@ public class MinecraftMixin {
         InteractionHand hand = InteractionHand.MAIN_HAND;
 
         // place block
-        InteractionResult useResult = gameMode.useItemOn(player, hand, blockHit);
+        InteractionResult useResult = gameMode.useItemOn(player, hand, bhr);
 
         if (useResult instanceof InteractionResult.Success success) {
             if (success.swingSource() == InteractionResult.SwingSource.CLIENT) {
@@ -188,16 +208,15 @@ public class MinecraftMixin {
                     gameRenderer.itemInHandRenderer.itemUsed(hand);
                 }
             }
-
-            lastPlacePos = target;
-
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Inject(method = "startUseItem", at = @At("RETURN"))
     private void endUseItem(CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
+        assert player != null;
 
         if (client.gameMode == null) return;
 
@@ -220,13 +239,16 @@ public class MinecraftMixin {
         if (client.player == null || hitResult == null || !(hitResult instanceof BlockHitResult bhr)) {
             return;
         }
+        if (bhr.getType() == HitResult.Type.MISS) { //somehow bhr can be missed...
+            return;
+        }
         if (magicDirection != null) {
             return;
         }
         lastPlacePos = bhr.getBlockPos().relative(bhr.getDirection());
         lastPlayerPos = client.player.position();
         prepareMagic = true;
-        magicY = hitResult.getLocation().y;
+        magicY = bhr.getLocation().y;
     }
 
     @Unique boolean shouldRemoveCooldown(ItemStack handHeld) {
