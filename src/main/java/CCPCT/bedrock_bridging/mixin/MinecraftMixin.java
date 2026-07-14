@@ -78,7 +78,7 @@ public class MinecraftMixin {
 //            player.sendOverlayMessage(Component.literal("prep "+prepareMagic+" dire "+(magicDirection!=null)));
         }
         if (lastPlacePos != null) {
-            player.sendOverlayMessage(Component.literal("lpp: "+lastPlacePos.toShortString()));
+            if (ModConfig.get().debug) player.sendOverlayMessage(Component.literal("lpp: "+lastPlacePos.toShortString()));
         }
 
         ItemStack handHeld = player.getMainHandItem();
@@ -120,7 +120,7 @@ public class MinecraftMixin {
                     return;
                 }
 
-                BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Direction.getNearest(magicDirection, null), target, false);
+                BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Direction.getNearest(magicDirection, null), lastPlacePos, false);
 
                 if (placeBlock(ci, blockHit)) {
                     lastPlacePos = target;
@@ -153,7 +153,7 @@ public class MinecraftMixin {
 //            }
             magicDirection = newBlock.subtract(lastPlacePos);
             if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("gut, "+magicDirection.toShortString()));
-            hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), newBlock, false);
+            hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), lastPlacePos, false);
             if (placeBlock(ci, (BlockHitResult) hitResult)) {
                 lastPlacePos = newBlock;
                 ci.cancel();
@@ -208,8 +208,10 @@ public class MinecraftMixin {
                     gameRenderer.itemInHandRenderer.itemUsed(hand);
                 }
             }
+            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() + " §aSUCCESS"));
             return true;
         }
+        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() +" §cFAIL"));
         return false;
     }
 

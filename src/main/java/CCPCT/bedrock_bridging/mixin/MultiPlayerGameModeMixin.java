@@ -46,7 +46,7 @@ public class MultiPlayerGameModeMixin {
     )
     private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult blockHit, CallbackInfoReturnable<InteractionResult> cir) {
         if (ModConfig.get().debug) {
-            player.sendSystemMessage(Component.literal(blockHit.getLocation().toString()));
+            //player.sendSystemMessage(Component.literal(blockHit.getLocation().toString()));
         }
     }
 }
