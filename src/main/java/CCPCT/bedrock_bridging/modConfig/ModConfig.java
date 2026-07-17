@@ -15,6 +15,7 @@ public class ModConfig {
     public float reach = -1f;
     public int placementInterval = 4;
     public boolean disableToolCooldown = false;
+    public boolean disablePlaceCooldown = false;
 
     public boolean debug = false;
 

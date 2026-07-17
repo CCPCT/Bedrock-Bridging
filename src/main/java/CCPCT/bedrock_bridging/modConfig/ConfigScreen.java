@@ -10,14 +10,14 @@ import net.minecraft.network.chat.Component;
 public class ConfigScreen extends Screen {
 
     protected ConfigScreen() {
-        super(Component.translatable("easiercrafting.config.title"));
+        super(Component.literal("Bedrock Bridging Config"));
     }
 
     public static Screen getConfigScreen(Screen parent) {
         ModConfig.load();
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Component.translatable("easiercrafting.config.title"))
+                .setTitle(Component.literal("Bedrock Bridging Config"))
                 .setSavingRunnable(ModConfig::save);
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
@@ -47,6 +47,12 @@ public class ConfigScreen extends Screen {
                 .setTooltip(Component.literal("e.g. axe stripping/ hoeing farm/ placing crops"))
                 .setDefaultValue(false)
                 .setSaveConsumer(newValue -> ModConfig.get().disableToolCooldown = newValue)
+                .build());
+
+        generalTab.addEntry(entryBuilder.startBooleanToggle(Component.literal("Disable Place Cooldown"), ModConfig.get().disablePlaceCooldown)
+                .setTooltip(Component.literal("enable placing multiple blocks in a single frame...\nmight get flagged by anticheats"))
+                .setDefaultValue(false)
+                .setSaveConsumer(newValue -> ModConfig.get().disablePlaceCooldown = newValue)
                 .build());
 
         generalTab.addEntry(entryBuilder.startBooleanToggle(Component.literal("Debug"), ModConfig.get().debug)
