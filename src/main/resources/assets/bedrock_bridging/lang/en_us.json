@@ -1,3 +1,4 @@
 {
-  "key.bedrock_bridge.enableMod": "Toggle Placement Mode"
+  "key.bedrock_bridge.enableMod": "Toggle Placement Mode",
+  "key.bedrock_bridge.reverse": "Reverse Placement"
 }

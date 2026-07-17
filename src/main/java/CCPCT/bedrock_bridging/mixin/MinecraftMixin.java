@@ -2,15 +2,15 @@ package CCPCT.bedrock_bridging.mixin;
 
 // this class is indeed very spaghetti code
 
+import CCPCT.bedrock_bridging.Bedrock_bridging;
 import CCPCT.bedrock_bridging.modConfig.ModConfig;
+import CCPCT.bedrock_bridging.util.Chat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
-import net.minecraft.network.chat.Component;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -74,10 +74,21 @@ public class MinecraftMixin {
 
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
     private void onUseItem(CallbackInfo ci) {
+        assert player != null;
+
+        if (reverseKey.isDown()) {
+            if (lastReverse<2) {
+                lastReverse++;
+                ci.cancel();
+                return;
+            }
+        }
+
+
         if (!ModConfig.get().modEnabled || player==null) return;
 
         if (lastPlacePos != null) {
-            if (ModConfig.get().debug) player.sendOverlayMessage(Component.literal("lpp: "+lastPlacePos.toShortString()));
+            Chat.debug("lpp: "+lastPlacePos.toShortString());
         }
 
         ItemStack handHeld = player.getMainHandItem();
@@ -102,7 +113,7 @@ public class MinecraftMixin {
             return;
         }
 
-        if (ModConfig.get().debug) System.out.println("do 1");
+        // do 1
 
         Vec3 newVec = player.position().subtract(lastPlayerPos);
 
@@ -110,16 +121,16 @@ public class MinecraftMixin {
         BlockPos newBlock = lastPlacePos.offset(Math.clamp(Math.round(newVec.x), -1, 1),Math.clamp(Math.round(newVec.y), -1, 1),Math.clamp(Math.round(newVec.z), -1, 1));
 
 //        BlockPos newBlock = new BlockPos((int)Math.floor(newVec.x),(int)Math.floor(newVec.y),(int)Math.floor(newVec.z));
-//        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("new block "+ newBlock.toShortString()));
+//        Chat.debug(player.sendSystemMessage(Component.literal("new block "+ newBlock.toShortString()));
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
             //gut
 //            if (!Minecraft.getInstance().level.getBlockState(newBlock).canBeReplaced()) {
-//                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("blocked"));
+//                Chat.debug(player.sendSystemMessage(Component.literal("blocked"));
 //                return;
 //            }
             magicDirection = newBlock.subtract(lastPlacePos);
-            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("gut, "+magicDirection.toShortString()));
+            Chat.debug("gut, "+magicDirection.toShortString());
             hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), lastPlacePos, false);
             if (placeBlock((BlockHitResult) hitResult)) {
                 lastPlacePos = newBlock;
@@ -135,12 +146,12 @@ public class MinecraftMixin {
                 if (placeBlock(bhr)) {
                     magicDirection = newBlock.subtract(lastPlacePos);
                     lastPlacePos = newBlock;
-                    if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("nicht so gut, "+magicDirection.toShortString()));
+                    Chat.debug("nicht so gut, "+magicDirection.toShortString());
                 }
                 ci.cancel();
                 return;
             } else {
-                if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("schlecht"));
+                Chat.debug("schlecht");
             }
             lastPlacePos = newBlock;
         } else {
@@ -160,8 +171,6 @@ public class MinecraftMixin {
     @Unique
     private boolean magicLockPlace() {
         // return success?
-        if (ModConfig.get().debug) System.out.println("do 2");
-
         Minecraft client = Minecraft.getInstance();
 
         BlockPos target = lastPlacePos.offset(magicDirection);
@@ -171,7 +180,7 @@ public class MinecraftMixin {
         Vec3 lookDirection = player.getHeadLookAngle();
         Vec3 end = start.add(lookDirection.scale(ModConfig.get().reach==-1f ? 4.5 : ModConfig.get().reach));
 
-        // if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
+        // Chat.debug(player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
 
         Optional<Vec3> clip = box.clip(start, end);
         if (clip.isPresent()) {
@@ -228,10 +237,10 @@ public class MinecraftMixin {
                     gameRenderer.itemInHandRenderer.itemUsed(hand);
                 }
             }
-            if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() + " §aSUCCESS"));
+            Chat.debug("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() + " §aSUCCESS");
             return true;
         }
-        if (ModConfig.get().debug) player.sendSystemMessage(Component.literal("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() +" §cFAIL"));
+        Chat.debug("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() +" §cFAIL");
         return false;
     }
 
@@ -252,8 +261,6 @@ public class MinecraftMixin {
         }
 
 
-
-        if (ModConfig.get().debug) System.out.println("do end");
 
         rightClickDelay = ModConfig.get().placementInterval;
 
