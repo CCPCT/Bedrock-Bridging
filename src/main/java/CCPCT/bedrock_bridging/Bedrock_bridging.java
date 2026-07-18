@@ -63,9 +63,8 @@ public class Bedrock_bridging implements ClientModInitializer {
 
             if (client.options.keyUse.isDown()) {
                 // placing blocks
-                if (ModConfig.get().disablePlaceCooldown) {
-                    disablePosPacket=true;
-                }
+                disablePosPacket = reverseKey.isDown();
+
 
             } else {
                 lastPlacePos = null;
