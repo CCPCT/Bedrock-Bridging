@@ -2,7 +2,6 @@ package CCPCT.bedrock_bridging.mixin;
 
 // this class is indeed very spaghetti code
 
-import CCPCT.bedrock_bridging.Bedrock_bridging;
 import CCPCT.bedrock_bridging.modConfig.ModConfig;
 import CCPCT.bedrock_bridging.util.Chat;
 import net.minecraft.client.Minecraft;
@@ -33,10 +32,11 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import static CCPCT.bedrock_bridging.Bedrock_bridging.*;
 
+import java.util.Objects;
 import java.util.Optional;
 
-import static CCPCT.bedrock_bridging.Bedrock_bridging.*;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
@@ -131,7 +131,7 @@ public class MinecraftMixin {
 //            }
             magicDirection = newBlock.subtract(lastPlacePos);
             Chat.debug("gut, "+magicDirection.toShortString());
-            hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Direction.getNearest(magicDirection, null), lastPlacePos, false);
+            hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
             if (placeBlock((BlockHitResult) hitResult)) {
                 lastPlacePos = newBlock;
             } else {
@@ -169,9 +169,10 @@ public class MinecraftMixin {
 
 
     @Unique
-    private boolean magicLockPlace() {
+    private void magicLockPlace() {
         // return success?
         Minecraft client = Minecraft.getInstance();
+        assert player != null;
 
         BlockPos target = lastPlacePos.offset(magicDirection);
         AABB box = new AABB(target.getX(),target.getY(),target.getZ(),target.getX()+1,target.getY()+1,target.getZ()+1);
@@ -197,18 +198,16 @@ public class MinecraftMixin {
                 // works
             } else {
                 // blocked
-                return false;
+                return;
             }
 
-            BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Direction.getNearest(magicDirection, null), lastPlacePos, false);
+            BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
 
             if (placeBlock(blockHit)) {
                 lastPlacePos = target;
-                return true;
             }
 
         }
-        return false;
     }
 
     @Unique

@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
@@ -75,13 +74,11 @@ public class Bedrock_bridging implements ClientModInitializer {
                 magicDirection = null;
                 lastReverse = 0;
                 disablePosPacket = false;
-                recoverPosPacket = true;
 
             }
 
             if (!reverseKey.isDown()) {
                 disablePosPacket = false;
-                recoverPosPacket = true;
             }
 
         });

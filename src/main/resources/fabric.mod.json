@@ -3,7 +3,7 @@
   "id": "bedrock_bridging",
   "version": "${version}",
   "name": "Bedrock Bridging",
-  "description": "port bedrock bridging behaviour completely to java",
+  "description": "port bedrock bridging behaviour completely to java, as well as other placement utilities",
   "authors": ["CCPCT"],
   "contact": {
     "homepage": "https://modrinth.com/mod/bedrock-bridging-mod",
