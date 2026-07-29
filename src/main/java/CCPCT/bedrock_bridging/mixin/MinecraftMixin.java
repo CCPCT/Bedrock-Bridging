@@ -87,9 +87,9 @@ public class MinecraftMixin {
 
         if (!ModConfig.get().modEnabled || player==null) return;
 
-        if (lastPlacePos != null) {
-            Chat.debug("lpp: "+lastPlacePos.toShortString());
-        }
+//        if (lastPlacePos != null) {
+//            Chat.debug("lpp: "+lastPlacePos.toShortString());
+//        }
 
         ItemStack handHeld = player.getMainHandItem();
 
@@ -125,14 +125,23 @@ public class MinecraftMixin {
 
         if (lastPlacePos.distManhattan(newBlock) == 1) {
             //gut
-//            if (!Minecraft.getInstance().level.getBlockState(newBlock).canBeReplaced()) {
-//                Chat.debug(player.sendSystemMessage(Component.literal("blocked"));
-//                return;
-//            }
+            if (!player.level().getBlockState(newBlock).canBeReplaced()) {
+                Chat.debug("blocked");
+                return;
+            }
             magicDirection = newBlock.subtract(lastPlacePos);
             Chat.debug("gut, "+magicDirection.toShortString());
-            hitResult = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
-            if (placeBlock((BlockHitResult) hitResult)) {
+
+            BlockHitResult bhr = new BlockHitResult(getHitVecFromPositions(lastPlacePos,newBlock), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
+
+            hitResult = bhr;
+
+            if (ModConfig.get().guiBlock) {
+                Direction dir = bhr.getDirection();
+                bhr = new BlockHitResult(bhr.getLocation().relative(dir,1),dir.getOpposite(), bhr.getBlockPos().relative(dir,1),false);
+            }
+
+            if ( placeBlock(bhr)) {
                 lastPlacePos = newBlock;
             } else {
                 magicDirection = null;
@@ -167,14 +176,18 @@ public class MinecraftMixin {
     }
 
 
-
     @Unique
     private void magicLockPlace() {
-        // return success?
+        // return nothing
         Minecraft client = Minecraft.getInstance();
         assert player != null;
 
         BlockPos target = lastPlacePos.offset(magicDirection);
+
+        if (!player.level().getBlockState(target).canBeReplaced()) {
+            return;
+        }
+
         AABB box = new AABB(target.getX(),target.getY(),target.getZ(),target.getX()+1,target.getY()+1,target.getZ()+1);
         float partialTick = client.getDeltaTracker().getGameTimeDeltaTicks();
         Vec3 start = player.getEyePosition(partialTick);
@@ -201,9 +214,15 @@ public class MinecraftMixin {
                 return;
             }
 
-            BlockHitResult blockHit = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
+            BlockHitResult bhr = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
 
-            if (placeBlock(blockHit)) {
+            if (ModConfig.get().guiBlock) {
+                Direction dir = bhr.getDirection();
+                bhr = new BlockHitResult(bhr.getLocation().relative(dir,1),dir.getOpposite(), bhr.getBlockPos().relative(dir,1),false);
+            }
+
+
+            if (placeBlock(bhr)) {
                 lastPlacePos = target;
             }
 
@@ -229,6 +248,7 @@ public class MinecraftMixin {
         // place block
         InteractionResult useResult = gameMode.useItemOn(player, hand, bhr);
 
+
         if (useResult instanceof InteractionResult.Success success) {
             if (success.swingSource() == InteractionResult.SwingSource.CLIENT) {
                 player.swing(hand);
@@ -236,10 +256,10 @@ public class MinecraftMixin {
                     gameRenderer.itemInHandRenderer.itemUsed(hand);
                 }
             }
-            Chat.debug("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() + " §aSUCCESS");
+            Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation().toString() + "§9 dir: "+bhr.getDirection().getName()+" §aSUCCESS");
             return true;
         }
-        Chat.debug("place on: "+bhr.getBlockPos().toShortString()+" dir: " + bhr.getDirection().getName() +" §cFAIL");
+        Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation().toString() + "§9 dir: "+bhr.getDirection().getName()+" §cFAIL");
         return false;
     }
 
@@ -260,7 +280,6 @@ public class MinecraftMixin {
         }
 
 
-
         rightClickDelay = ModConfig.get().placementInterval;
 
 
@@ -273,6 +292,9 @@ public class MinecraftMixin {
         if (magicDirection != null) {
             return;
         }
+
+        Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation().toString() + "§9 dir: "+bhr.getDirection().getName()+" §6MC");
+
         lastPlacePos = bhr.getBlockPos().relative(bhr.getDirection());
         lastPlayerPos = client.player.position();
         prepareMagic = true;
@@ -280,9 +302,9 @@ public class MinecraftMixin {
     }
 
     @Unique boolean shouldRemoveCooldown(ItemStack handHeld) {
-        assert Minecraft.getInstance().level != null;
+        assert player != null;
         if (!(hitResult instanceof BlockHitResult bhr)) return false;
-        Block block = Minecraft.getInstance().level.getBlockState(bhr.getBlockPos()).getBlock();
+        Block block = player.level().getBlockState(bhr.getBlockPos()).getBlock();
         Item item = block.asItem();
         return ((handHeld.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || handHeld.getMaxDamage() > 0) && (item.getDefaultInstance().is(ItemTags.VILLAGER_PLANTABLE_SEEDS) || block instanceof StemBlock ||item == Items.DIRT||item == Items.GRASS_BLOCK||item==Items.FARMLAND||item.getDefaultInstance().is(ItemTags.LOGS)));
     }
