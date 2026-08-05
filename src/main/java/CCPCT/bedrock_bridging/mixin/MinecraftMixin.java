@@ -188,16 +188,25 @@ public class MinecraftMixin {
             return;
         }
 
-        AABB box = new AABB(target.getX(),target.getY(),target.getZ(),target.getX()+1,target.getY()+1,target.getZ()+1);
-        float partialTick = client.getDeltaTracker().getGameTimeDeltaTicks();
-        Vec3 start = player.getEyePosition(partialTick);
-        Vec3 lookDirection = player.getHeadLookAngle();
-        Vec3 end = start.add(lookDirection.scale(ModConfig.get().reach==-1f ? 4.5 : ModConfig.get().reach));
+        BlockHitResult bhr;
 
-        // Chat.debug(player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
+        if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult obhr && obhr.getBlockPos().equals(lastPlacePos) && obhr.getBlockPos().relative(obhr.getDirection()).equals(target)) {
+            // use original placement method
+            bhr = obhr;
+            Chat.debug("skip");
+        } else {
+            AABB box = new AABB(target.getX(), target.getY(), target.getZ(), target.getX() + 1, target.getY() + 1, target.getZ() + 1);
+            float partialTick = client.getDeltaTracker().getGameTimeDeltaTicks();
+            Vec3 start = player.getEyePosition(partialTick);
+            Vec3 lookDirection = player.getHeadLookAngle();
+            Vec3 end = start.add(lookDirection.scale(ModConfig.get().reach == -1f ? 4.5 : ModConfig.get().reach));
 
-        Optional<Vec3> clip = box.clip(start, end);
-        if (clip.isPresent()) {
+            // Chat.debug(player.sendSystemMessage(Component.literal("last: "+lastPlacePos+" dir: "+magicDirection.toShortString()+" target: "+target.toShortString()));
+
+            Optional<Vec3> clip = box.clip(start, end);
+            if (clip.isEmpty()) {
+                return;
+            }
 
             BlockHitResult worldClip = player.level().clip(new ClipContext(
                     start,
@@ -207,25 +216,24 @@ public class MinecraftMixin {
                     player
             ));
 
-            if (worldClip.getType()== HitResult.Type.MISS || clip.get().closerThan(player.getEyePosition(), worldClip.getLocation().distanceTo(player.getEyePosition()))) {
+            if (worldClip.getType() == HitResult.Type.MISS || clip.get().closerThan(player.getEyePosition(), worldClip.getLocation().distanceTo(player.getEyePosition()))) {
                 // works
             } else {
                 // blocked
                 return;
             }
 
-            BlockHitResult bhr = new BlockHitResult(getHitVecFromPositions(lastPlacePos,target), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
+            bhr = new BlockHitResult(getHitVecFromPositions(lastPlacePos, target), Objects.requireNonNull(Direction.getNearest(magicDirection, null)), lastPlacePos, false);
+            Chat.debug("orig");
+        }
+        if (ModConfig.get().guiBlock) {
+            Direction dir = bhr.getDirection();
+            bhr = new BlockHitResult(bhr.getLocation().relative(dir, 1), dir.getOpposite(), bhr.getBlockPos().relative(dir, 1), false);
+        }
 
-            if (ModConfig.get().guiBlock) {
-                Direction dir = bhr.getDirection();
-                bhr = new BlockHitResult(bhr.getLocation().relative(dir,1),dir.getOpposite(), bhr.getBlockPos().relative(dir,1),false);
-            }
 
-
-            if (placeBlock(bhr)) {
-                lastPlacePos = target;
-            }
-
+        if (placeBlock(bhr)) {
+            lastPlacePos = target;
         }
     }
 
@@ -256,10 +264,10 @@ public class MinecraftMixin {
                     gameRenderer.itemInHandRenderer.itemUsed(hand);
                 }
             }
-            Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation().toString() + "§9 dir: "+bhr.getDirection().getName()+" §aSUCCESS");
+            Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation() + "§9 dir: "+bhr.getDirection().getName()+" §aSUCCESS");
             return true;
         }
-        Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation().toString() + "§9 dir: "+bhr.getDirection().getName()+" §cFAIL");
+        Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation() + "§9 dir: "+bhr.getDirection().getName()+" §cFAIL");
         return false;
     }
 
