@@ -63,7 +63,7 @@ public class MinecraftMixin {
 
     @Unique
     private static Vec3 getHitVecFromPositions(BlockPos lastPlacePos, BlockPos target) {
-        Vec3 centre = new Vec3(lastPlacePos).lerp(new Vec3(target), 0.5).add(.5,0,.5).with(Direction.Axis.Y, magicY);
+        Vec3 centre = new Vec3(lastPlacePos).lerp(new Vec3(target), 0.5).add(.5,0,.5);
         if (lastPlacePos.getY() == target.getY()) {
             return centre.with(Direction.Axis.Y, magicY);
         } else {
