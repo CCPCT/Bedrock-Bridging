@@ -17,6 +17,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.StemBlock;
@@ -258,10 +259,10 @@ public class MinecraftMixin {
 
 
         if (useResult instanceof InteractionResult.Success success) {
-            if (success.swingSource() == InteractionResult.SwingSource.CLIENT) {
-                player.swing(hand);
+            if (success.swingSource() == InteractionResult.SwingSource.PREDICTED) {
+                player.swing(hand, SwingAnimation.DEFAULT, true);
                 if (!heldItem.isEmpty() && (heldItem.getCount() != oldCount || player.hasInfiniteMaterials())) {
-                    gameRenderer.itemInHandRenderer.itemUsed(hand);
+//                    gameRenderer.firstPersonHandsAndItemsRenderer.;
                 }
             }
             Chat.debug("§3block: "+bhr.getBlockPos().toShortString()+"§2 loc: "+bhr.getLocation() + "§9 dir: "+bhr.getDirection().getName()+" §aSUCCESS");

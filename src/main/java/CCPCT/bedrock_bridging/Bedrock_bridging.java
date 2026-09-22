@@ -11,7 +11,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.glfw.GLFW;
 
 
 public class Bedrock_bridging implements ClientModInitializer {
@@ -39,15 +38,15 @@ public class Bedrock_bridging implements ClientModInitializer {
         // Register the KeyMapping
         enableModKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key."+ MOD_ID +".enableMod",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_B,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_B,  // 0: unknown key
                 keybindCat
         ));
 
         reverseKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key."+ MOD_ID +".reverse",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_J,
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_J,
                 keybindCat
         ));
 
