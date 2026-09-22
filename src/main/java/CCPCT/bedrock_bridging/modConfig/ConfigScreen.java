@@ -35,6 +35,7 @@ public class ConfigScreen extends Screen {
                 .setTooltip(Component.literal("adjust distance u can reach a block\n-1 or 4.5= no change"))
                 .setDefaultValue(-1f)
                 .setSaveConsumer(newValue -> ModConfig.get().reach = newValue)
+                .setRequirement(() -> ModConfig.get().debug)
                 .build());
 
         generalTab.addEntry(entryBuilder.startIntField(Component.literal("Placement interval"), ModConfig.get().placementInterval)

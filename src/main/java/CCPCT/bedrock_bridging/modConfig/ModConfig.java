@@ -45,9 +45,15 @@ public class ModConfig {
         } catch (IOException e) {
             INSTANCE = new ModConfig();
         }
+        if (!get().debug) {
+            get().reach = -1;
+        }
     }
 
     public static void save() {
+        if (!get().debug) {
+            get().reach = -1;
+        }
         try {
             Files.writeString(CONFIG_PATH, GSON.toJson(get()));
         } catch (IOException e) {
